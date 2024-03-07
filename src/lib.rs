@@ -2,13 +2,13 @@
 //!
 //! The `fastset` crate provides a custom `Set` implementation, optimized for managing collections of `usize` values. It is particularly tailored for use cases involving indices of other data structures, where elements are densely packed within a known range and the application demands high volumes of insert and delete operations.
 //!
-//! ## Rationale
+//! ## Key Features
 //!
-//! In many applications, especially those dealing with indices or identifiers, the need arises for a data structure that can efficiently handle a dense range of `usize` values. Traditional set implementations might not always offer the best balance between performance and memory usage for such specific scenarios. The `fastset` crate addresses this by offering a `Set` that:
-//! - **Specializes in `usize` elements**, making it ideal for scenarios like indexing.
-//! - **Optimizes for densely packed elements**, leveraging this characteristic to enhance performance.
-//! - **Provides high-performance operations**, especially for insertions and deletions, critical for applications requiring dynamic set manipulations.
-//! - **Has predictable memory usage**, which, while not minimal, is bounded and directly related to the specified maximum element value.
+//! - **Specialized for `usize`**: Tailored specifically for handling `usize` values, ideal for indexing scenarios.
+//! - **Optimized for Dense Elements**: Efficiency is maximized when elements are closely packed within a pre-determined range.
+//! - **High-Performance Operations**: Engineered for fast insertions, deletions, and random access.
+//! - **Predictable Memory Usage**: While not designed for minimal memory footprint, its usage is predictable and directly related to the maximum element value specified upon creation.
+//! - **Random Access**: Includes a `random` method to retrieve a random element from the set, essential for simulations and randomized algorithms.
 //!
 //! ## Applicability
 //!
@@ -18,15 +18,6 @@
 //! - Any application where elements are dense, have a bounded range, and require frequent dynamic manipulation.
 //!
 //! However, it may not be the best fit for applications where sparse elements span a wide range or where minimizing memory footprint is a primary concern.
-//!
-//! ## Key Features
-//!
-//! - **Specialized for `usize`**: Tailored specifically for handling `usize` values, ideal for indexing scenarios.
-//! - **Optimized for Dense Elements**: Efficiency is maximized when elements are closely packed within a pre-determined range.
-//! - **High-Performance Operations**: Engineered for fast insertions, deletions, and random access.
-//! - **Predictable Memory Usage**: While not designed for minimal memory footprint, its usage is predictable and directly related to the maximum element value specified upon creation.
-//! - **Random Access**: Includes a `random` method to retrieve a random element from the set, essential for simulations and randomized algorithms.
-//!
 //!
 //! ## Performance Benchmarks
 //!
@@ -101,7 +92,7 @@
 //!
 //! ## Note
 //!
-//! This crate was developed in the context of Monte Carlo simulations of spin systems. In such simulations, it's required to track and provide fast access to elements of a given sign (positive or negative energy) from an array whose elements (spin energies) are rapidly changing signs due to Monte Carlo updates. The `fastset` `Set` facilitates relatively efficient tracking and manipulation of these elements over extended periods, improving the performance of simulations.
+//! This crate was developed in the context of Monte Carlo simulations of spin systems. In such simulations, it's required //! to track and provide fast access to elements of a given sign (positive or negative energy) from an array whose elements //! (spin energies) are rapidly changing signs due to Monte Carlo updates. The `fastset` `Set` facilitates relatively efficient tracking and manipulation of these elements over extended periods, improving the performance of simulations.
 
 mod set;
 pub use set::{Set, SetOps};
