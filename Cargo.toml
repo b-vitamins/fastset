@@ -2,16 +2,25 @@
 name = "fastset"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Ayan Das <ayand@iisc.ac.in>"]
+license = "GPL-3.0"
+description = "Fast set implementation for dense, bounded integer collections, optimized for quick updates and access."
+repository = "https://github.com/b-vitamins/fastset"
+documentation = "https://docs.rs/fastset"
+readme = "README.md"
+keywords = ["set", "dense", "bounded", "integer", "performance"]
+categories = ["data-structures", "algorithms", "no-std"]
+homepage = "https://github.com/b-vitamins/fastset"
 
 [dependencies]
 nanorand = "0.7.0"
 serde = { version = "1.0.197", features = ["derive"] }
 
 [dev-dependencies]
-fastrand = "1.4.0"
-criterion = "0.3.4"
+criterion = "0.5.1"
+
+[features]
+default = []
 
 [[bench]]
 name = "set"
