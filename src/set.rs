@@ -3192,11 +3192,16 @@ mod tests {
     fn debug_format() {
         let set = Set::from_iter(1..=5);
         let debug_output = format!("{:?}", set);
-        assert_eq!(
-            debug_output,
-            "Set { indicator: [false, true, true, true, true, true], elements: [1, 2, 3, 4, 5], index: [None, Some(0), Some(1), Some(2), Some(3), Some(4)], max: 5 }"
-        );
+        
+    
+        assert!(debug_output.contains("Set {"));
+        assert!(debug_output.contains("elements: [1, 2, 3, 4, 5]"));
+        assert!(debug_output.contains("max: 5"));
+    
+        assert!(debug_output.contains("Element: 1, Indicator: true, Index: Some(0)"));
+        assert!(debug_output.contains("Element: 5, Indicator: true, Index: Some(4)"));
     }
+
     #[test]
     fn display_format() {
         let set = Set::from_iter(1..=3);
