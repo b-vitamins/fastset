@@ -1886,11 +1886,17 @@ impl<'a> std::ops::BitXorAssign<&'a HashSet<usize>> for Set {
 /// ```
 impl std::fmt::Debug for Set {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Custom Debug implementation to focus on non-empty elements and their mappings
+        let element_details: Vec<String> = self.elements.iter().map(|&e| {
+            let indicator = self.indicator[e]; // Check if the indicator for this element is true
+            let index = self.index[e]; // Retrieve the index mapping for this element
+            format!("Element: {}, Indicator: {}, Index: {:?}", e, indicator, index)
+        }).collect();
+
         f.debug_struct("Set")
-            .field("indicator", &self.indicator)
-            .field("elements", &self.elements)
-            .field("index", &self.index)
-            .field("max", &self.max)
+            .field("elements", &self.elements) // Show actual elements
+            .field("element_details", &element_details) // Show corresponding indicators and index mappings
+            .field("max", &self.max) // Include the 'max' field for completeness
             .finish()
     }
 }
