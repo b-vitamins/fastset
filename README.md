@@ -7,43 +7,39 @@
 
 Fast set implementation for dense, bounded integer collections. Provides quick updates and random access.
 
-The `fastset` crate provides a custom `Set` implementation, optimized for managing collections of `usize` values. It is particularly tailored for use cases involving indices of other data structures, where elements are densely packed within a known range and the application demands high volumes of insert and delete operations.
+The `fastset` crate provides a custom `Set` implementation, optimized for managing collections of `usize` values. Use cases involve having to manage indices of other data structures of a special kind, whose elements are densely packed within a known range and the insert and delete operations are voluminous, i.e., operation predictability and performance take precedence over memory footprint.
 
-## Key Features
+Example use cases:
+    - For storing lattice sites of interest in stochastic cellular automata simulations
+    - Managing available or used indices in large arrays.
+    - Tracking slots in memory pools.
+    
+fastset::Set is not a good solution for memory contrained applications or for applications with storage need for sparse elements spread over a extended range.
+
+## Features
 
 - **Specialized for `usize`**: Tailored specifically for handling `usize` values, ideal for indexing scenarios.
-- **Optimized for Dense Elements**: Efficiency is maximized when elements are closely packed within a pre-determined range.
-- **High-Performance Operations**: Engineered for fast insertions, deletions, and random access.
-- **Predictable Memory Usage**: While not designed for minimal memory footprint, its usage is predictable and directly related to the maximum element value specified upon creation.
+- **High-Performance Operations**: Uses direct memory access for fast insertions, deletions, and random access.
 - **Random Access**: Includes a `random` method to retrieve a random element from the set, essential for simulations and randomized algorithms.
+- **Optimized for Dense Elements**: Efficiency is maximized when elements are closely packed within a pre-determined range.
+- **Predictable Memory Usage**: Memory usage, even if will a large footprint, is predictable and directly related to the maximum element value.
 
-## Applicability
-
-The `fastset` `Set` is designed for environments where operation predictability and performance take precedence over minimal memory usage. It excels in managing dense, bounded collections of `usize` elements, particularly in scenarios with a high frequency of insertions and deletions. Example use cases include:
-- Managing available or used indices in large arrays.
-- Tracking slots in memory pools.
-- Any application where elements are dense, have a bounded range, and require frequent dynamic manipulation.
-
-However, it may not be the best fit for applications where sparse elements span a wide range or where minimizing memory footprint is a primary concern.
-
-## Performance Benchmarks
+## Benchmarks
 
 Benchmarks comparing `fastset::Set` with `hashbrown::HashSet` and `std::collections::HashSet`:
 
-| Operation  | `fastset::Set` (ns) | `hashbrown::HashSet` (ns) | `std::collections::HashSet` (ns) |
-|------------|---------------------|---------------------------|----------------------------------|
-| insert     | 3.3772 - 3.4153     | 7.8488 - 7.9377           | 21.632 - 21.811                  |
-| remove     | 3.0707 - 3.0856     | 5.1704 - 5.2657           | 13.469 - 13.655                  |
-| contains   | 2.9405 - 2.9808     | 3.2842 - 3.3088           | 16.706 - 16.988                  |
-| random     | 2.7410 - 2.7724     | N/A                       | N/A                              |
+| Operation | `Set (fastset)`  | `HashSet (hashbrown)` | `HashSet (std)`    |
+|-----------|------------------|-----------------------|--------------------|
+| insert    | 3.3772-3.4153 ns | 7.8488 - 7.9377 ns    | 21.632 - 21.811 ns |
+| remove    | 3.0707-3.0856 ns | 5.1704 - 5.2657 ns    | 13.469 - 13.655 ns |
+| contains  | 2.9405-2.9808 ns | 3.2842 - 3.3088 ns    | 16.706 - 16.988 ns |
+| random    | 2.7410-2.7724 ns | N/A                   | N/A                |
 
 Benchmarks were conducted on a machine with the following specifications:
 - Processor: AMD Ryzen™ 5 5600G with Radeon™ Graphics x 12
 - Memory: 58.8 GiB
 - Operating System: Guix System
 - OS Type: 64-bit
-
-Please note that the times shown represent the range observed across multiple runs. Lower numbers indicate better performance.
 
 ## Usage
 
@@ -80,7 +76,7 @@ fn main() {
 
     // Use the random method to get a random element from the set
     let mut rng = WyRand::new();
-    if let Some(element) = set.random(&mut rng).copied() {
+    if let Some(element) = set.random(&mut rng) {
         println!("Randomly selected element: {}", element);
         assert!(set.contains(&element));
         set.remove(&element);

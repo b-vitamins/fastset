@@ -525,12 +525,12 @@ impl Set {
     /// assert!(random_element.is_some());
     /// ```
     #[inline(always)]
-    pub fn random(&self, rng: &mut WyRand) -> Option<&usize> {
+    pub fn random(&self, rng: &mut WyRand) -> Option<usize> {
         match self.elements.is_empty() {
             true => None,
             false => self
                 .elements
-                .get(rng.generate_range(0..self.elements.len())),
+                .get(rng.generate_range(0..self.elements.len())).copied(),
         }
     }
 
@@ -2732,7 +2732,7 @@ mod tests {
         for _ in 0..100 {
             if let Some(value) = set.random(&mut rng) {
                 assert!(
-                    set.contains(value),
+                    set.contains(&value),
                     "Randomly selected value should be in the set"
                 );
                 observed_values.insert(value);
@@ -2772,7 +2772,7 @@ mod tests {
         const ITERATIONS: usize = 500_000;
         for _ in 0..ITERATIONS {
             if let Some(value) = set.random(&mut rng) {
-                counts[*value - 1] += 1; // Subtract 1 to convert value to index
+                counts[value - 1] += 1; // Subtract 1 to convert value to index
             }
         }
 
