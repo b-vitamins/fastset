@@ -96,10 +96,11 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn reserve(&mut self, new_max_element: usize) {
-        if new_max_element > self.max {
+        if new_max_element >= self.max {
             let new_size = new_max_element + 1;
             self.indicator.resize(new_size, false);
             self.index.resize(new_size, None);
+            self.elements.reserve(new_size);
             self.max = new_max_element;
         }
     }
@@ -209,10 +210,7 @@ impl Set {
         match value >= self.max {
             true => match value < MAX_CAPACITY {
                 true => {
-                    let new_size = value + 1;
-                    self.indicator.resize(new_size, false);
-                    self.index.resize(new_size, None);
-                    self.max = value;
+                    self.reserve(value);
                     self.insert_unchecked(value)
                 }
                 false => false,
