@@ -73,6 +73,23 @@ impl Set {
         }
     }
 
+    /// Returns the capacity of the Set.
+    ///
+    /// The capacity of a Set is the maximum number of elements it can hold without
+    /// allocating additional memory.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fastset::Set;
+    ///
+    /// let mut set = Set::with_capacity(50);
+    /// assert_eq!(set.capacity(), 50);
+    /// ```
+    pub fn capacity(&self) -> usize {
+        self.max
+    }
+
     /// Reserves capacity for at least `new_max_element` additional elements
     /// in the Set.
     ///
@@ -103,6 +120,65 @@ impl Set {
             self.elements.reserve(new_size);
             self.max = new_max_element;
         }
+    }
+
+    /// Shrinks the capacity of the Set to the specified minimum capacity.
+    ///
+    /// It will reduce the capacity of the Set to fit the specified `min_capacity`.
+    /// If the current capacity is already smaller than `min_capacity`, this method
+    /// does nothing.
+    ///
+    /// # Arguments
+    ///
+    /// * `min_capacity` - The minimum capacity to reserve after shrinking.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fastset::{set, Set};
+    ///
+    /// let mut set = Set::with_capacity(10);
+    ///
+    /// set.insert(1);
+    /// set.insert(2);
+    /// set.insert(3);
+    /// assert!(set.capacity() >= 10);
+    /// set.shrink_to(4);
+    /// assert!(set.capacity() >= 4);
+    /// set.shrink_to(0);
+    /// assert!(set.capacity() >= 3);
+    /// ```
+    #[inline(always)]
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.elements.shrink_to(min_capacity);
+        self.max = self.elements.capacity();
+        self.indicator.resize(self.max, false);
+        self.index.resize(self.max, None);
+    }
+
+    /// Shrinks the capacity of the Set as much as possible.
+    ///
+    /// This method is the same as `shrink_to` and exists for compatibility reasons.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fastset::Set;
+    ///
+    /// let mut set = Set::with_capacity(10);
+    /// set.insert(1);
+    /// set.insert(2);
+    /// set.insert(3);
+    /// assert!(set.capacity() >= 10);
+    /// set.shrink_to_fit();
+    /// assert!(set.capacity() >= 3);
+    /// ```
+    #[inline(always)]
+    pub fn shrink_to_fit(&mut self) {
+        self.elements.shrink_to_fit();
+        self.max = self.elements.capacity();
+        self.indicator.resize(self.max, false);
+        self.index.resize(self.max, None);
     }
 
     /// Returns the number of elements in the Set.
