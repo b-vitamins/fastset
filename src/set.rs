@@ -1,10 +1,10 @@
+use crate::MAX_CAPACITY;
 use nanorand::{Rng, WyRand};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator, IntoIterator};
 use std::slice::Iter;
-use crate::MAX_CAPACITY;
 
 /// Represents a custom Set implementation.
 #[derive(Clone, Serialize, Deserialize)]
@@ -38,7 +38,7 @@ impl Set {
                 index: vec![None; max_element + 1],
                 max: max_element,
             },
-            false => panic!("max_element is larger than MAX_ELEMENTS")
+            false => panic!("max_element is larger than MAX_ELEMENTS"),
         }
     }
 
@@ -564,7 +564,7 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn remove_smallest(&mut self) -> Option<usize> {
-        if let Some(&value) = self.elements.get(0) {
+        if let Some(&value) = self.elements.first() {
             self.remove(&value);
             Some(value)
         } else {
@@ -601,10 +601,16 @@ impl Set {
     #[inline(always)]
     pub fn random(&self, rng: &mut WyRand) -> Option<usize> {
         match self.elements.is_empty() {
+            // SAFETY: index is within bounds by design
+            false => unsafe {
+                Some(
+                    *self
+                        .elements
+                        .as_ptr()
+                        .add(rng.generate_range(0..self.elements.len())),
+                )
+            },
             true => None,
-            false => self
-                .elements
-                .get(rng.generate_range(0..self.elements.len())).copied(),
         }
     }
 
@@ -650,7 +656,7 @@ impl Set {
         unsafe {
             let indicator_ptr = self.indicator.as_mut_ptr().add(value);
             // Check if the value is already set to avoid redundancy
-            if *indicator_ptr == false {
+            if !(*indicator_ptr) {
                 *indicator_ptr = true; // Only calculate the pointer once
 
                 let len = self.elements.len();
@@ -1961,11 +1967,18 @@ impl<'a> std::ops::BitXorAssign<&'a HashSet<usize>> for Set {
 impl std::fmt::Debug for Set {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Custom Debug implementation to focus on non-empty elements and their mappings
-        let element_details: Vec<String> = self.elements.iter().map(|&e| {
-            let indicator = self.indicator[e]; // Check if the indicator for this element is true
-            let index = self.index[e]; // Retrieve the index mapping for this element
-            format!("Element: {}, Indicator: {}, Index: {:?}", e, indicator, index)
-        }).collect();
+        let element_details: Vec<String> = self
+            .elements
+            .iter()
+            .map(|&e| {
+                let indicator = self.indicator[e]; // Check if the indicator for this element is true
+                let index = self.index[e]; // Retrieve the index mapping for this element
+                format!(
+                    "Element: {}, Indicator: {}, Index: {:?}",
+                    e, indicator, index
+                )
+            })
+            .collect();
 
         f.debug_struct("Set")
             .field("elements", &self.elements) // Show actual elements
@@ -2531,7 +2544,9 @@ mod tests {
         set.insert(3);
         set.clear();
         assert!(set.is_empty());
-        for i in 1..=3 { assert!(!set.contains(&i)); }
+        for i in 1..=3 {
+            assert!(!set.contains(&i));
+        }
     }
     #[test]
     fn clear_empty_set() {
@@ -2875,7 +2890,7 @@ mod tests {
         let result = set.insert_unchecked(3);
 
         // Ensure the element was inserted and the operation returned true
-        assert_eq!(result, true);
+        assert!(result);
         assert_eq!(set.len(), 1);
         assert!(set.contains(&3));
     }
@@ -2888,7 +2903,7 @@ mod tests {
         let result = set.remove_unchecked(&3);
 
         // Ensure the element was removed and the operation returned true
-        assert_eq!(result, true);
+        assert!(result);
         assert_eq!(set.len(), 0);
         assert!(!set.contains(&3));
     }
@@ -2905,13 +2920,13 @@ mod tests {
         set.insert(42);
 
         // Check if the set contains the inserted value
-        assert_eq!(set.contains(&42), true);
+        assert!(set.contains(&42));
     }
     #[test]
     fn contains_returns_false_for_nonexistent_element() {
         let set = HashSet::<usize>::new();
         // Check if the set contains a value not inserted
-        assert_eq!(set.contains(&100), false);
+        assert!(!set.contains(&100));
     }
     #[test]
     fn iter_returns_correct_values() {
@@ -3266,12 +3281,11 @@ mod tests {
     fn debug_format() {
         let set = Set::from_iter(1..=5);
         let debug_output = format!("{:?}", set);
-        
-    
+
         assert!(debug_output.contains("Set {"));
         assert!(debug_output.contains("elements: [1, 2, 3, 4, 5]"));
         assert!(debug_output.contains("max: 5"));
-    
+
         assert!(debug_output.contains("Element: 1, Indicator: true, Index: Some(0)"));
         assert!(debug_output.contains("Element: 5, Indicator: true, Index: Some(4)"));
     }
@@ -3395,7 +3409,7 @@ mod tests {
     #[test]
     fn test_extend_ref_usize() {
         let mut set = Set::new(0);
-        let values = vec![1, 2, 3];
+        let values = [1, 2, 3];
         set.extend(values.iter());
 
         assert!(set.contains(&1));
@@ -3414,7 +3428,7 @@ mod tests {
     }
     #[test]
     fn test_from_iterator_ref_usize() {
-        let values = vec![1, 2, 3];
+        let values = [1, 2, 3];
         let set: Set = values.iter().collect();
 
         assert!(set.contains(&1));
