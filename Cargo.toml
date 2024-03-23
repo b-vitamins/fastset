@@ -1,9 +1,9 @@
 [package]
 name = "fastset"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 authors = ["Ayan Das <ayand@iisc.ac.in>"]
-license = "GPL-3.0"
+license = "MIT"
 description = "Fast set implementation for dense, bounded integer collections, optimized for quick updates and access."
 repository = "https://github.com/b-vitamins/fastset"
 documentation = "https://docs.rs/fastset"
