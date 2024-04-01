@@ -2,7 +2,11 @@ use std::collections::HashSet;
 
 fn main() {
     let max_element = 100_000_000;
+<<<<<<< HEAD
     let sparse_factor = 10;
+=======
+    let sparse_factor = 64;
+>>>>>>> master
 
     // Initialize the Set
     let mut set = HashSet::new();

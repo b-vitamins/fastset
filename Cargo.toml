@@ -31,8 +31,16 @@ harness = false
 [[bin]]
 name = "memory_set"
 path = "bin/memory_usage_set.rs"
+<<<<<<< HEAD
 
+=======
+harness = false
+>>>>>>> master
 
 [[bin]]
 name = "memory_hashset"
 path = "bin/memory_usage_hashset.rs"
+<<<<<<< HEAD
+=======
+harness = false
+>>>>>>> master
