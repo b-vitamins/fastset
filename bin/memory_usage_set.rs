@@ -2,7 +2,7 @@ use fastset::Set;
 
 fn main() {
     let max_element = 100_000_000;
-    let sparse_factor = 1;
+    let sparse_factor = 64;
 
     // Initialize the Set
     let mut set = Set::new(max_element);

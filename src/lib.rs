@@ -7,14 +7,8 @@
 //!
 //! Fast set implementation for dense, bounded integer collections. Provides quick updates and random access.
 //!
-//! The `fastset` crate provides a custom `Set` implementation, optimized for managing collections of `usize` //! values. Use cases involve having to manage indices of other data structures of a special kind, whose //! elements are densely packed within a known range and the insert and delete operations are voluminous, i.e., //! operation predictability and performance take precedence over memory footprint.
-//!
-//! Example use cases:
-//!     - For storing lattice sites of interest in stochastic cellular automata simulations
-//!     - Managing available or used indices in large arrays.
-//!     - Tracking slots in memory pools.
-//!     
-//! fastset::Set is not a good solution for memory contrained applications or for applications with storage need //! for sparse elements spread over a extended range.
+//! fastset::Set is not a good solution for memory contrained applications or for applications with storage need 
+//! for sparse elements spread over a extended range.
 //!
 //! ## Features
 //!
@@ -22,16 +16,21 @@
 //! - Uses direct memory access for fast insertions, deletions, and random access.
 //! - Includes a `random` method to retrieve a random element from the set, essential for simulations and randomized algorithms.
 //!
+//! ## Use cases:
+//! - For storing lattice sites of interest in stochastic cellular automata simulations
+//! - Managing available or used indices in large arrays.
+//! - Tracking slots in memory pools.
+//!     
 //! ## Benchmarks
 //!
-//! Benchmarks comparing `fastset::Set` with `hashbrown::HashSet` and `std::collections::HashSet`:
-//! 
-//! | Operation | `Set (fastset)`      | `HashSet (hashbrown)` | `HashSet (std)`    |
-//! |-----------|----------------------|-----------------------|--------------------|
-//! | insert    | 1.1345-1.1362 ns     | 4.6160-4.6201 ns      | 14.055-14.190 ns   |
-//! | remove    | 1.2500-1.2527 ns     | 2.9729-2.9758 ns      | 10.454-10.462 ns   |
-//! | contains  | 937.21-939.16 ps     | 1.0470-1.0492 ns      | 13.678-13.687 ns   |
-//! | random    | 610.19-615.55 ps     | N/A                   | N/A                |
+//! Performance comparisons between `fastset::Set`, `hashbrown::HashSet`, and `std::collections::HashSet`:
+//!
+//! | Operation | `fastset::Set` | `hashbrown::HashSet` | `std::collections::HashSet` |
+//! |-----------|----------------|----------------------|-----------------------------|
+//! | insert    | 1.1632 ns      | 4.7105 ns            | 14.136 ns                   |
+//! | remove    | 1.1647 ns      | 3.0459 ns            | 10.625 ns                   |
+//! | contains  | 932.81 ps      | 985.38 ps            | 13.827 ns                   |
+//! | random    | 651.26 ps      | N/A                  | N/A                         |
 //!
 //! Benchmarks were conducted on a machine with the following specifications:
 //! - Processor: AMD Ryzen™ 5 5600G with Radeon™ Graphics x 12
@@ -45,7 +44,6 @@
 //! use fastset::{set, Set};
 //! use nanorand::WyRand;
 //!
-//! fn main() {
 //!     // Create a set with some initial elements
 //!     let mut set = set![5, 10, 15, 20, 25, 30];
 //!
@@ -85,9 +83,7 @@
 //!
 //!     // Display the current elements and the set length
 //!     println!("Final set: {}, Length: {}", set, set.len());
-//! }
 //! ```
-//!
 //!
 mod set;
 pub use set::{Set, SetOps};

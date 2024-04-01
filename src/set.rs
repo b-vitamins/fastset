@@ -16,9 +16,9 @@ pub struct Set {
 }
 
 impl Set {
-    const PAGE_SIZE: usize = 128; // Ensure this is a power of 2 for bitwise operations.
-    const PAGE_MASK: usize = Self::PAGE_SIZE - 1; // Mask for bitwise AND operation.
-
+    const PAGE_SIZE: usize = 32;
+    const PAGE_SHIFT: usize = Self::PAGE_SIZE.trailing_zeros() as usize;
+    const PAGE_MASK: usize = Self::PAGE_SIZE - 1;
     /// Creates a new Set with the specified maximum element.
     ///
     /// # Arguments
@@ -40,21 +40,10 @@ impl Set {
         Self {
             indicator: vec![false; max_element + 1],
             elements: Vec::with_capacity(max_element + 1),
-            pages: Vec::new(), // No longer using a direct index vector
+            pages: Vec::new(),
             max: max_element,
         }
     }
-
-    /// Calculate page index and in-page index for a value.
-    /// 
-    /// The page index determines which page the value belongs to,
-    /// while the in-page index determines the value's position within that page.
-    fn page_indices(value: usize) -> (usize, usize) {
-        let page_index = value >> 10; // Right shift by log2(PAGE_SIZE) to divide.
-        let in_page_index = value & Self::PAGE_MASK; // Bitwise AND with PAGE_MASK for modulo.
-        (page_index, in_page_index)
-    }
-
 
     /// Creates a new Set with the specified initial capacity.
     ///
@@ -87,7 +76,7 @@ impl Set {
     /// Returns the capacity of the Set.
     ///
     /// The capacity of a Set is the maximum number of elements it can hold without
-    /// allocating additional memory.
+    /// allocating additional memory. 
     ///
     /// # Examples
     ///
@@ -463,6 +452,18 @@ impl Set {
     pub fn min(&self) -> Option<usize> {
         self.elements.iter().min().copied()
     }
+
+    /// Calculate page index and in-page index for a value.
+    /// 
+    /// The page index determines which page the value belongs to,
+    /// while the in-page index determines the value's position within that page.
+    #[inline(always)]
+    fn page_indices(value: usize) -> (usize, usize) {
+        let page_index = value >> Self::PAGE_SHIFT; // Shift right by PAGE_SHIFT to divide by PAGE_SIZE
+        let in_page_index = value & Self::PAGE_MASK; // Bitwise AND with PAGE_MASK to modulo by PAGE_SIZE
+        (page_index, in_page_index)
+    }
+
     /// Returns the number of elements in the Set that fall within the specified range.
     ///
     /// The range is defined by the provided range bounds, inclusive on the start bound
@@ -673,6 +674,7 @@ impl Set {
         if self.pages[page_idx].is_none() {
             self.pages[page_idx] = Some(vec![0; Self::PAGE_SIZE]);
         }
+
 
         // Insert the value into the elements vector and record its index in the page.
         let elem_index = self.elements.len();
