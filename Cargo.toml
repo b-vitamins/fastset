@@ -20,9 +20,6 @@ serde = { version = "1.0.197", features = ["derive"] }
 criterion = "0.4.0"
 hashbrown = "0.14.3"
 
-[features]
-default = []
-
 [[bench]]
 name = "set"
 path = "bench/set.rs"
@@ -31,16 +28,7 @@ harness = false
 [[bin]]
 name = "memory_set"
 path = "bin/memory_usage_set.rs"
-<<<<<<< HEAD
-
-=======
-harness = false
->>>>>>> master
 
 [[bin]]
 name = "memory_hashset"
 path = "bin/memory_usage_hashset.rs"
-<<<<<<< HEAD
-=======
-harness = false
->>>>>>> master
