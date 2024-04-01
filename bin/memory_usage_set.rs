@@ -1,8 +1,8 @@
 use fastset::Set;
 
 fn main() {
-    let max_element = 100_000;
-    let sparse_factor = 10; // Adjust based on desired sparsity
+    let max_element = 100_000_000;
+    let sparse_factor = 1;
 
     // Initialize the Set
     let mut set = Set::new(max_element);

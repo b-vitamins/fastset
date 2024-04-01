@@ -16,7 +16,7 @@ pub struct Set {
 }
 
 impl Set {
-    const PAGE_SIZE: usize = 1024; // Ensure this is a power of 2 for bitwise operations.
+    const PAGE_SIZE: usize = 128; // Ensure this is a power of 2 for bitwise operations.
     const PAGE_MASK: usize = Self::PAGE_SIZE - 1; // Mask for bitwise AND operation.
 
     /// Creates a new Set with the specified maximum element.
