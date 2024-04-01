@@ -21,10 +21,13 @@
 
 //! 0.4.0 introduces a paging mechanism that reduces the memory-footprint of fastset::Set. 
 //! With the paging feature, `fastset::Set` achieves ~ 100% reduction in peak heap memory allocations 
-//! with no additional performance overhead. The integers used were twice as sparse as the page size.
-//!
-//! Note that fastset::Set is still not a good solution for memory contrained applications
+//! with no additional performance overhead.
+//! 
+//! Note that while paging improves the existing memory footprint, 
+//! `fastset::Set` **is still not** a good solution for memory constrained applications 
 //! or for applications with storage need for sparse elements spread over an extended range.
+//! For integers twice as sparse as the page size, the `fastset::Set` with paging 
+//! has peak heap allocation ~ 8x that of `HashSet`.
 //!
 //! ## Benchmarks
 //!
