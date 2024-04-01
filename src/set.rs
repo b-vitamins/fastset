@@ -16,7 +16,7 @@ pub struct Set {
 }
 
 impl Set {
-    const PAGE_SIZE: usize = 32;
+    const PAGE_SIZE: usize = 16;
     const PAGE_SHIFT: usize = Self::PAGE_SIZE.trailing_zeros() as usize;
     const PAGE_MASK: usize = Self::PAGE_SIZE - 1;
     /// Creates a new Set with the specified maximum element.

@@ -3,24 +3,29 @@
 //! ![Crates.io](https://img.shields.io/crates/v/fastset)
 //! ![docs.rs](https://img.shields.io/docsrs/fastset)
 //! ![License](https://img.shields.io/crates/l/fastset)
-//! ![GitHub Workflow Status](https://github.com/b-vitamins/fastset/actions/workflows/rust.yml/badge.svg)
+//! ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/b-vitamins/fastset/Rust)
 //!
-//! Fast set implementation for dense, bounded integer collections. Provides quick updates and random access.
-//!
-//! fastset::Set is not a good solution for memory contrained applications or for applications with storage need 
-//! for sparse elements spread over a extended range.
+//! Fast set implementation for dense, bounded integer collections, offering quick updates and random access.
 //!
 //! ## Features
 //!
-//! - Tailored specifically for handling `usize` values, ideal for indexing scenarios.
-//! - Uses direct memory access for fast insertions, deletions, and random access.
-//! - Includes a `random` method to retrieve a random element from the set, essential for simulations and randomized algorithms.
+//! - Tailored for `usize` elements, ideal for index-based applications.
+//! - Fast insertions, deletions, and random access through direct memory operations.
+//! - Paging mechanism to enhance memory usage efficiency.
+//! - `random` method for selecting random elements, crucial for simulations.
 //!
-//! ## Use cases:
-//! - For storing lattice sites of interest in stochastic cellular automata simulations
-//! - Managing available or used indices in large arrays.
+//! ## Use Cases:
+//! - Tracking interest points within stochastic cellular automata simulations.
+//! - Managing available or used indices in arrays.
 //! - Tracking slots in memory pools.
-//!     
+
+//! 0.4.0 introduces a paging mechanism that reduces the memory-footprint of fastset::Set. 
+//! With the paging feature, `fastset::Set` achieves ~ 100% reduction in peak heap memory allocations 
+//! with no additional performance overhead. The integers used were twice as sparse as the page size.
+//!
+//! Note that fastset::Set is still not a good solution for memory contrained applications
+//! or for applications with storage need for sparse elements spread over an extended range.
+//!
 //! ## Benchmarks
 //!
 //! Performance comparisons between `fastset::Set`, `hashbrown::HashSet`, and `std::collections::HashSet`:
@@ -32,11 +37,10 @@
 //! | contains  | 932.81 ps      | 985.38 ps            | 13.827 ns                   |
 //! | random    | 651.26 ps      | N/A                  | N/A                         |
 //!
-//! Benchmarks were conducted on a machine with the following specifications:
-//! - Processor: AMD Ryzen™ 5 5600G with Radeon™ Graphics x 12
-//! - Memory: 58.8 GiB
-//! - Operating System: Guix System
-//! - OS Type: 64-bit
+//! Benchmarks were performed on the following system:
+//! - CPU: AMD Ryzen™ 5 5600G with Radeon™ Graphics x 12
+//! - RAM: 58.8 GiB
+//! - OS: Guix System, 64-bit
 //!
 //! ## Usage
 //!
