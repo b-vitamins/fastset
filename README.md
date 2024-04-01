@@ -3,7 +3,7 @@
 ![Crates.io](https://img.shields.io/crates/v/fastset)
 ![docs.rs](https://img.shields.io/docsrs/fastset)
 ![License](https://img.shields.io/crates/l/fastset)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/b-vitamins/fastset/Rust)
+![GitHub Workflow Status](https://github.com/b-vitamins/fastset/actions/workflows/rust.yml/badge.svg)
 
 Fast set implementation for dense, bounded integer collections, offering quick updates and random access.
 
