@@ -27,3 +27,8 @@ default = []
 name = "set"
 path = "bench/set.rs"
 harness = false
+
+[[bin]]
+name = "memory"
+path = "bin/memory_usage.rs"
+harness = false
