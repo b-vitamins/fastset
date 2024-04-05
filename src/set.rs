@@ -68,7 +68,7 @@ impl Set {
         Set {
             indicator: vec![false; capacity],
             elements: Vec::with_capacity(capacity),
-            pages: Vec::new(), // Adjusted for paged structure
+            pages: Vec::new(),
             max: capacity,
         }
     }
@@ -744,8 +744,6 @@ impl Set {
         }
         self.elements.pop();
 
-        // Optionally, clear the page entry for the removed element. This might not be strictly necessary
-        // for functionality but can be done for cleanliness.
         true
     }
 }
@@ -2397,6 +2395,8 @@ impl<'a> IntoIterator for &'a mut Set {
 mod tests {
     use super::*;
     use std::collections::hash_map::DefaultHasher;
+    use statrs::distribution::{ChiSquared, ContinuousCDF};
+
     #[test]
     fn new_with_zero_max_element() {
         let set = Set::new(0);
@@ -2437,7 +2437,6 @@ mod tests {
         assert!(set.pages.is_empty());
         assert_eq!(set.max, 0);
     }
-/*
     #[test]
     fn with_capacity_nonzero() {
         let capacity = 10;
@@ -2445,7 +2444,6 @@ mod tests {
 
         assert_eq!(set.elements.len(), 0);
         assert_eq!(set.indicator.len(), capacity);
-        assert_eq!(set.index.len(), capacity);
         assert_eq!(set.max, capacity);
     }
     #[test]
@@ -2455,7 +2453,6 @@ mod tests {
 
         assert_eq!(set.elements.len(), 0);
         assert_eq!(set.indicator.len(), capacity);
-        assert_eq!(set.index.len(), capacity);
         assert_eq!(set.max, capacity);
     }
     #[test]
@@ -2473,7 +2470,6 @@ mod tests {
 
         assert_eq!(set.max, 10);
         assert_eq!(set.indicator.len(), 11);
-        assert_eq!(set.index.len(), 11);
     }
     #[test]
     fn reserve_no_increase_capacity() {
@@ -2482,7 +2478,6 @@ mod tests {
 
         assert_eq!(set.max, 5);
         assert_eq!(set.indicator.len(), 6);
-        assert_eq!(set.index.len(), 6);
     }
     #[test]
     fn reserve_same_capacity() {
@@ -2491,7 +2486,6 @@ mod tests {
 
         assert_eq!(set.max, 5);
         assert_eq!(set.indicator.len(), 6);
-        assert_eq!(set.index.len(), 6);
     }
     #[test]
     fn reserve_large_capacity() {
@@ -2500,9 +2494,7 @@ mod tests {
 
         assert_eq!(set.max, 100);
         assert_eq!(set.indicator.len(), 101);
-        assert_eq!(set.index.len(), 101);
     }
-*/
     #[test]
     fn len_empty_set() {
         let set = Set::new(5);
@@ -2857,44 +2849,8 @@ mod tests {
         let mut rng = WyRand::new();
         assert_eq!(set.random(&mut rng), None);
     }
-    #[test]
-    fn random_returns_elements_uniformly() {
-        // Create a set with known elements
-        let elements = vec![1, 2, 3, 4, 5];
-        let set = Set::from(elements.clone());
 
-        // Use a deterministic RNG for testing
-        let mut rng = WyRand::new_seed(42u64);
-
-        // Count occurrences of each element
-        let mut counts = vec![0; elements.len()];
-
-        // Perform many iterations to test randomness
-        const ITERATIONS: usize = 500_000;
-        for _ in 0..ITERATIONS {
-            if let Some(value) = set.random(&mut rng) {
-                counts[value - 1] += 1; // Subtract 1 to convert value to index
-            }
-        }
-
-        // Calculate the expected number of occurrences for each element
-        let expected_count = ITERATIONS as f64 / elements.len() as f64;
-
-        // Allow a margin of error of 1%
-        let margin = expected_count * 0.005;
-
-        // Check that the counts are within the expected range
-        for (i, &count) in counts.iter().enumerate() {
-            assert!(
-                (count as f64 - expected_count).abs() <= margin,
-                "Count for {} is not within expected range: {} +/- {}",
-                i + 1,
-                expected_count,
-                margin
-            );
-        }
-    }
-    #[test]
+#[test]
     fn insert_unchecked_adds_element_correctly() {
         let mut set = Set::new(5);
 
@@ -3688,5 +3644,37 @@ mod tests {
         for i in 1..=8 {
             assert!(union.contains(&i));
         }
+    }
+
+    #[test]
+    fn sampling_is_uniformly_at_random() {
+        const SAMPLES: usize = 1_000_000;
+        const EDGE_OF_THE_UNIVERSE: usize = 10000;
+
+        let elements = (1..=EDGE_OF_THE_UNIVERSE).collect::<Vec<_>>();
+        let set = Set::from(elements.clone());
+        let mut rng = WyRand::new_seed(42u64);
+        let mut counts = vec![0f64; elements.len()];
+
+        for _ in 0..SAMPLES {
+            if let Some(value) = set.random(&mut rng) {
+                counts[value - 1] += 1.0;
+            }
+        }
+
+        let e = SAMPLES as f64 / elements.len() as f64;
+        let statistic: f64 = counts.iter().map(|&o| { (o - e) * (o - e) / e }).sum();
+
+        let dof = elements.len() - 1;
+        let chi = ChiSquared::new(dof as f64).unwrap();
+        let acceptable = chi.inverse_cdf(0.99);
+
+        // Null hypothesis: Elements are sampled uniformly at random
+        assert!(
+            statistic < acceptable,
+            "Chi-square statistic {} is greater than what's acceptable ({})",
+            statistic,
+            acceptable,
+        );
     }
 }
