@@ -1,15 +1,15 @@
 [package]
 name = "fastset"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
-authors = ["Ayan Das <ayand@iisc.ac.in>"]
+authors = ["Ayan Das"]
 license = "MIT"
 description = "Fast set implementation for dense, bounded integer collections, optimized for quick updates and access."
 repository = "https://github.com/b-vitamins/fastset"
 documentation = "https://docs.rs/fastset"
 readme = "README.md"
-keywords = ["set", "dense", "bounded", "integer", "performance"]
-categories = ["data-structures", "algorithms"]
+keywords = ["set", "dense", "bounded", "integer", "performance", "delphic"]
+categories = ["data-structures"]
 homepage = "https://github.com/b-vitamins/fastset"
 
 [dependencies]
@@ -19,6 +19,12 @@ serde = { version = "1.0.197", features = ["derive"] }
 [dev-dependencies]
 criterion = "0.4.0"
 hashbrown = "0.14.3"
+statrs = "0.16.0"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = 3
 
 [[bench]]
 name = "set"
