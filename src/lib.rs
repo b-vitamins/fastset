@@ -144,7 +144,7 @@ const MAX_CAPACITY: usize = 1_000_000_000;
 #[macro_export]
 macro_rules! set {
     ($($element:expr),*) => {{
-        let mut new_set = Set::new(30000); // Adjusted for crate-level visibility
+        let mut new_set = Set::with_max(30000); // Adjusted for crate-level visibility
         $(new_set.insert($element);)*
         new_set
     }};
