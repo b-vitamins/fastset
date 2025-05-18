@@ -76,9 +76,12 @@ impl Set {
     /// capacity. This allows you to pre-allocate memory for the Set if you
     /// know in advance how many elements it will contain.
     ///
+    /// Note: The capacity represents the inclusive maximum value that can be stored,
+    /// not the number of elements. For example, with_capacity(10) can store values 0-10.
+    ///
     /// # Arguments
     ///
-    /// * `capacity` - The initial capacity of the Set.
+    /// * `capacity` - The initial capacity of the Set (max value that can be stored).
     ///
     /// # Examples
     ///
@@ -102,8 +105,8 @@ impl Set {
 
     /// Returns the capacity of the Set.
     ///
-    /// The capacity of a Set is the maximum number of elements it can hold without
-    /// allocating additional memory.
+    /// The capacity of a Set is the maximum value that can be stored in the set.
+    /// Note that this represents the largest value, not the count of elements.
     ///
     /// # Examples
     ///
@@ -114,7 +117,7 @@ impl Set {
     /// assert_eq!(set.capacity(), 50);
     /// ```
     pub fn capacity(&self) -> usize {
-        self.max // Return max instead of indicator.len() for consistency
+        self.max // Return max value that can be stored
     }
 
     /// Returns the maximum element value that this Set can hold.
@@ -547,10 +550,9 @@ impl Set {
     ///
     /// let mut set = Set::with_max(100);
     /// set.insert(5);
-    /// set.insert(15);
     /// set.insert(10);
     ///
-    /// assert_eq!(set.peek_largest(), Some(15));
+    /// assert_eq!(set.peek_largest(), Some(10));
     /// ```
     #[inline(always)]
     pub fn peek_largest(&self) -> Option<usize> {
@@ -743,7 +745,7 @@ impl Set {
     #[inline(always)]
     pub fn random(&self, rng: &mut WyRand) -> Option<usize> {
         match self.elements.is_empty() {
-            // SAFETY: index is within bounds by design
+            // SAFETY: index is within bounds by design (generated within elements.len() range)
             false => unsafe {
                 Some(
                     *self
@@ -880,9 +882,11 @@ impl Set {
             let swapped_value = self.elements[elem_index];
 
             // Update the page entry for the swapped element.
+            // Now the element that was last is at elem_index position
             let (swapped_page_idx, swapped_in_page_idx) = Self::page_indices(swapped_value);
             self.pages[swapped_page_idx].as_mut().unwrap()[swapped_in_page_idx] = elem_index;
         }
+        // The old last element will be popped (removed) from the vector
         self.elements.pop();
 
         // Zero the slot in the page to avoid stale entries
@@ -2193,6 +2197,8 @@ impl std::fmt::Display for Set {
 
 /// Implements the `Default` trait for `Set`.
 ///
+/// Creates a small Set with minimal memory overhead.
+///
 /// # Examples
 ///
 /// ```
@@ -2201,7 +2207,8 @@ impl std::fmt::Display for Set {
 /// ```
 impl Default for Set {
     fn default() -> Self {
-        Self::with_max(MAX_CAPACITY / 30000)
+        // Create a small set with minimal overhead
+        Self::with_max(64)
     }
 }
 
@@ -2278,9 +2285,12 @@ impl PartialEq<HashSet<usize>> for Set {
 /// ```
 impl Hash for Set {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        let mut elems = self.indicator.clone();
-        elems.sort_unstable();
-        elems.hash(state);
+        // Hash the indices of true bits to properly represent the set
+        for (idx, &bit) in self.indicator.iter().enumerate() {
+            if bit {
+                idx.hash(state);
+            }
+        }
     }
 }
 
@@ -2371,7 +2381,7 @@ impl<const N: usize> From<&[usize; N]> for Set {
 /// ```
 impl From<HashSet<usize>> for Set {
     fn from(hashset: HashSet<usize>) -> Self {
-        let mut set = Set::with_max(hashset.iter().max().unwrap_or(&0) + 1);
+        let mut set = Set::with_max(*hashset.iter().max().unwrap_or(&0));
         hashset.iter().for_each(|&item| {
             set.insert(item);
         });
