@@ -5,7 +5,7 @@ fn main() {
     let sparse_factor = 64;
 
     // Initialize the Set
-    let mut set = Set::new(max_element);
+    let mut set = Set::with_max(max_element);
 
     // Populate the set with sparse data
     for i in (0..max_element).step_by(sparse_factor) {

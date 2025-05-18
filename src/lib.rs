@@ -14,14 +14,14 @@
 //! - `random` method for uniform random sampling
 //! - Paging mechanism to somewhat mitigate the large memory footprint[^1]
 //!
-//! Note that while paging improves the existing memory footprint, 
-//! `fastset::Set` **is still not** a good solution for memory constrained applications 
+//! Note that while paging improves the existing memory footprint,
+//! `fastset::Set` **is still not** a good solution for memory constrained applications
 //! or for applications with storage need for sparse elements spread over an extended range.
-//! For integers twice as sparse as the page size, the `fastset::Set` with paging 
+//! For integers twice as sparse as the page size, the `fastset::Set` with paging
 //! has peak heap allocation ~ 8x that of `std::collections::HashSet`.
 //!
 //! [^1]: A paging mechanism is introduced in `0.4.0` that reduces the memory-footprint of `fastset::Set`.
-//! With the paging feature, `fastset::Set` achieves ~ 50% reduction in peak heap memory allocations 
+//! With the paging feature, `fastset::Set` achieves ~ 50% reduction in peak heap memory allocations
 //! with no additional performance overhead.
 //!
 //! ## Benchmarks
@@ -82,7 +82,7 @@
 //! use fastset::Set;
 //! use nanorand::WyRand;
 //! use statrs::distribution::{ChiSquared, ContinuousCDF};
-//! 
+//!
 //! fn sampling_is_uniformly_at_random() {
 //!     const SAMPLES: usize = 1_000_000;
 //!     const EDGE_OF_THE_UNIVERSE: usize = 10000;
