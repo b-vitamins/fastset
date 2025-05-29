@@ -30,11 +30,3 @@ opt-level = 3
 name = "set"
 path = "bench/set.rs"
 harness = false
-
-[[bin]]
-name = "memory_set"
-path = "bin/memory_usage_set.rs"
-
-[[bin]]
-name = "memory_hashset"
-path = "bin/memory_usage_hashset.rs"
