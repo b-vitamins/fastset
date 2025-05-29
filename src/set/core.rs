@@ -38,7 +38,7 @@ impl Set {
         }
         Self {
             indicator: vec![false; max_element.saturating_add(1)], // Always at least 1 slot
-            elements: Vec::with_capacity(max_element.saturating_add(1)),
+            elements: Vec::with_capacity(std::cmp::min(max_element.saturating_add(1), 1024)),
             pages: Vec::new(),
             max: max_element,
             current_max: None,
@@ -91,7 +91,7 @@ impl Set {
     pub fn with_capacity(capacity: usize) -> Self {
         Set {
             indicator: vec![false; capacity.saturating_add(1)], // Always at least 1 slot
-            elements: Vec::with_capacity(capacity),
+            elements: Vec::with_capacity(std::cmp::min(capacity, 1024)),
             pages: Vec::new(),
             max: capacity, // max is now capacity, not capacity-1
             current_max: None,
@@ -191,12 +191,20 @@ impl Set {
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.elements.shrink_to(min_capacity);
         let new_max = if self.is_empty() {
-            min_capacity // Changed from min_capacity.saturating_sub(1) to fix the test
+            min_capacity
         } else {
             std::cmp::max(self.current_max.unwrap_or(0), min_capacity)
         };
         self.max = new_max;
         self.indicator.resize(new_max + 1, false);
+        self.indicator.shrink_to_fit();
+
+        // Clean up pages
+        if !self.pages.is_empty() {
+            let max_page_idx = Self::page_indices(new_max).0;
+            self.pages.truncate(max_page_idx + 1);
+            self.pages.shrink_to_fit();
+        }
     }
 
     /// Shrinks the capacity of the Set as much as possible.
@@ -223,24 +231,30 @@ impl Set {
         // If the set is empty, keep a minimal indicator size
         if self.is_empty() {
             self.max = 0;
-            self.indicator.resize(1, false);
+            self.indicator = vec![false; 1];
+            self.indicator.shrink_to_fit();
             self.pages.clear();
+            self.pages.shrink_to_fit();
         } else {
             // Otherwise resize to fit the current maximum value
             self.max = self.current_max.unwrap_or(0);
             self.indicator.resize(self.max + 1, false);
+            self.indicator.shrink_to_fit();
 
             // Clean up pages that are now out of range
             if !self.pages.is_empty() {
                 let max_page_idx = Self::page_indices(self.max).0;
-                if max_page_idx + 1 < self.pages.len() {
-                    self.pages.truncate(max_page_idx + 1);
+                self.pages.truncate(max_page_idx + 1);
+                self.pages.shrink_to_fit();
+
+                // Shrink individual page allocations
+                for page in &mut self.pages {
+                    if let Some(p) = page {
+                        p.shrink_to_fit();
+                    }
                 }
             }
         }
-
-        // Shrink pages
-        self.pages.shrink_to_fit();
     }
 
     /// Returns the number of elements in the Set.
@@ -318,9 +332,19 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn clear(&mut self) {
-        self.indicator.fill(false);
+        // More efficient clearing - only clear the parts that are actually used
+        for &elem in &self.elements {
+            self.indicator[elem] = false;
+        }
         self.elements.clear();
-        self.pages.clear();
+
+        // Clear pages more efficiently
+        for page in &mut self.pages {
+            if let Some(p) = page {
+                p.fill(0);
+            }
+        }
+
         self.current_max = None;
         self.current_min = None;
     }
@@ -349,29 +373,25 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn insert(&mut self, value: usize) -> bool {
-        // Fast path: if value is exactly max+1, we can just resize indicator by 1
-        if value == self.max + 1 {
-            self.indicator.push(false);
-            self.max = value;
-            // Now safe because we just ensured value is in bounds
+        // Fast path: already in bounds
+        if value < self.indicator.len() {
             return self.insert_unchecked(value);
         }
 
-        // Regular path for other cases
-        match value > self.max {
-            true => match value < MAX_CAPACITY {
-                true => {
-                    self.reserve(value);
-                    // Now safe because we just reserved space for value
-                    self.insert_unchecked(value)
-                }
-                false => false,
-            },
-            false => {
-                // Safe because value <= max and indicator.len() > max
-                self.insert_unchecked(value)
-            }
+        // Check max capacity
+        if value >= MAX_CAPACITY {
+            return false;
         }
+
+        // Optimized resize for small increments
+        if value == self.max + 1 {
+            self.indicator.push(false);
+            self.max = value;
+        } else {
+            self.reserve(value);
+        }
+
+        self.insert_unchecked(value)
     }
 
     /// Removes an element from the Set.
@@ -399,9 +419,10 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn remove(&mut self, value: &usize) -> bool {
-        match *value >= self.indicator.len() {
-            true => false,
-            false => unsafe { self.remove_unchecked(value) },
+        if *value < self.indicator.len() {
+            unsafe { self.remove_unchecked(value) }
+        } else {
+            false
         }
     }
 
@@ -412,12 +433,6 @@ impl Set {
     /// # Arguments
     ///
     /// * `value` - The value to check for presence in the Set.
-    ///
-    /// # Safety
-    ///
-    /// This method uses unsafe pointer arithmetic to access elements of the internal
-    /// indicator vector. However, it is safe because it performs a bound check on the
-    /// `value`, ensuring that no out-of-bounds access occurs.
     ///
     /// # Examples
     ///
@@ -432,10 +447,8 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn contains(&self, value: &usize) -> bool {
-        match *value < self.indicator.len() {
-            true => unsafe { *self.indicator.as_ptr().add(*value) },
-            false => false, // Out of bounds, so not contained.
-        }
+        // Safe and almost as fast as unsafe version
+        self.indicator.get(*value).copied().unwrap_or(false)
     }
 
     /// Retrieves the specified value from the Set, if it exists.
@@ -459,9 +472,10 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn get(&self, value: &usize) -> Option<usize> {
-        match self.contains(value) {
-            true => Some(*value),
-            false => None,
+        if self.contains(value) {
+            Some(*value)
+        } else {
+            None
         }
     }
 
@@ -487,13 +501,10 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn take(&mut self, value: &usize) -> Option<usize> {
-        match self.contains(value) {
-            true => {
-                // Safe because we just checked value exists and is in-bounds via contains()
-                unsafe { self.remove_unchecked(value) };
-                Some(*value)
-            }
-            false => None,
+        if self.remove(value) {
+            Some(*value)
+        } else {
+            None
         }
     }
 
@@ -621,9 +632,15 @@ impl Set {
         let end = match range.end_bound() {
             std::ops::Bound::Included(&e) => e + 1,
             std::ops::Bound::Excluded(&e) => e,
-            std::ops::Bound::Unbounded => self.max + 1,
+            std::ops::Bound::Unbounded => self.indicator.len(),
         };
-        (start..end).filter(|&value| self.contains(&value)).count()
+
+        // Optimized counting using indicator directly
+        if end <= self.indicator.len() && start < end {
+            self.indicator[start..end].iter().filter(|&&b| b).count()
+        } else {
+            0
+        }
     }
 
     /// Returns the number of elements in the Set that are strictly less than the specified value.
@@ -649,10 +666,13 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn rank(&self, value: usize) -> usize {
-        self.elements
-            .iter()
-            .filter(|&&element| element < value)
-            .count()
+        // Fast path for small values
+        if value == 0 {
+            return 0;
+        }
+
+        // Use range_cardinality for efficiency
+        self.range_cardinality(0..value)
     }
 
     /// Removes and returns the largest value in the Set, if it is not empty.
@@ -673,14 +693,10 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn remove_largest(&mut self) -> Option<usize> {
-        match self.current_max {
-            Some(max_val) => {
-                // Safe because max_val is a value that exists in the set
-                unsafe { self.remove_unchecked(&max_val) };
-                Some(max_val)
-            }
-            None => None,
-        }
+        self.current_max.and_then(|max_val| {
+            unsafe { self.remove_unchecked(&max_val) };
+            Some(max_val)
+        })
     }
 
     /// Removes and returns the smallest value in the Set, if it is not empty.
@@ -701,14 +717,10 @@ impl Set {
     /// ```
     #[inline(always)]
     pub fn remove_smallest(&mut self) -> Option<usize> {
-        match self.current_min {
-            Some(min_val) => {
-                // Safe because min_val is a value that exists in the set
-                unsafe { self.remove_unchecked(&min_val) };
-                Some(min_val)
-            }
-            None => None,
-        }
+        self.current_min.and_then(|min_val| {
+            unsafe { self.remove_unchecked(&min_val) };
+            Some(min_val)
+        })
     }
 
     /// Returns a random element from the Set using the provided random number generator.
@@ -806,17 +818,20 @@ impl Set {
         self.elements.push(value);
         self.pages[page_idx].as_mut().unwrap()[in_page_idx] = elem_index;
 
-        // Update current_max and current_min
-        match self.current_max {
-            Some(max) if value > max => self.current_max = Some(value),
-            None => self.current_max = Some(value),
-            _ => {}
-        }
-
-        match self.current_min {
-            Some(min) if value < min => self.current_min = Some(value),
-            None => self.current_min = Some(value),
-            _ => {}
+        // Update current_max and current_min more efficiently
+        match (self.current_max, self.current_min) {
+            (None, None) => {
+                self.current_max = Some(value);
+                self.current_min = Some(value);
+            }
+            (Some(max), Some(min)) => {
+                if value > max {
+                    self.current_max = Some(value);
+                } else if value < min {
+                    self.current_min = Some(value);
+                }
+            }
+            _ => unreachable!("Invariant violated: max and min should both be Some or None"),
         }
 
         true
@@ -867,41 +882,45 @@ impl Set {
         // Calculate page index and in-page index.
         let (page_idx, in_page_idx) = Self::page_indices(*value);
 
-        // No need to check for page existence here since the value exists.
+        // Get the element index from the page
         let elem_index = self.pages[page_idx].as_ref().unwrap()[in_page_idx];
 
-        // Remove the element by swapping with the last and shrinking the elements vector.
-        if elem_index < self.elements.len() - 1 {
-            let last_index = self.elements.len() - 1;
+        // Remove the element by swapping with the last
+        let last_index = self.elements.len() - 1;
+
+        if elem_index < last_index {
+            // Swap with last element
             self.elements.swap(elem_index, last_index);
 
+            // Update the page entry for the swapped element
             let swapped_value = self.elements[elem_index];
-
-            // Update the page entry for the swapped element.
-            // Now the element that was last is at elem_index position
             let (swapped_page_idx, swapped_in_page_idx) = Self::page_indices(swapped_value);
             self.pages[swapped_page_idx].as_mut().unwrap()[swapped_in_page_idx] = elem_index;
         }
-        // The old last element will be popped (removed) from the vector
+
+        // Remove the last element
         self.elements.pop();
 
         // Zero the slot in the page to avoid stale entries
         self.pages[page_idx].as_mut().unwrap()[in_page_idx] = 0;
 
         // Update current_max and current_min if necessary
-        if Some(*value) == self.current_max || Some(*value) == self.current_min {
-            if self.is_empty() {
-                self.current_max = None;
-                self.current_min = None;
-            } else {
-                // Recalculate max/min if the removed value was max/min
-                if Some(*value) == self.current_max {
-                    self.current_max = self.elements.iter().max().copied();
-                }
-                if Some(*value) == self.current_min {
-                    self.current_min = self.elements.iter().min().copied();
+        match (self.current_max, self.current_min) {
+            (Some(max), Some(min)) if *value == max || *value == min => {
+                if self.is_empty() {
+                    self.current_max = None;
+                    self.current_min = None;
+                } else {
+                    // Only recalculate if we removed the max or min
+                    if *value == max {
+                        self.current_max = self.elements.iter().copied().max();
+                    }
+                    if *value == min {
+                        self.current_min = self.elements.iter().copied().min();
+                    }
                 }
             }
+            _ => {} // No update needed
         }
 
         true
