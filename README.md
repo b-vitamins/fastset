@@ -120,3 +120,9 @@ Fast set implementation for dense, bounded integer collections, offering quick u
  [1]: **Chakraborty, Sourav, N. V. Vinodchandran, and Kuldeep S. Meel.** *"Distinct Elements in Streams: An Algorithm for the (Text) Book."* arXiv preprint arXiv:2301.10191 (2023).
 
  [2]: **Meel, Kuldeep S., Sourav Chakraborty, and N. V. Vinodchandran.** *"Estimation of the Size of Union of Delphic Sets: Achieving Independence from Stream Size."* Proceedings of the 41st ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems. 2022.
+
+## Development Setup
+
+Run `./setup-dev.sh` once with internet access to prepare a fully
+offline development environment. The script installs Rust, fetches all
+crate dependencies, and runs the test suite.
